@@ -15,7 +15,7 @@ const outputBusStopArrivals = async (busStopID) => {
     }
 }
 
-const fetchPostCodeLocation = async(postCode) => {
+const fetchPostcodeLongitudeLatitude = async(postCode) => {
     try {
         const postCodeResponse = await fetch("https://api.postcodes.io/postcodes/"+postCode);
         const receivedPostCodeJSON = await postCodeResponse.json();
@@ -32,13 +32,15 @@ const fetchPostCodeLocation = async(postCode) => {
 
 const fetchBusStopsByLongitudeLatitude = async(longitude, latitude) => {
     try {
-        const nearbyStopResponse = await fetch("https://api.tfl.gov.uk/StopPoint/?lat="+latitude+"&lon="+longitude+"&stopTypes=NaptanPublicBusCoachTram");
-        const receivedStopsJSON = await nearbyStopResponse.json();
-        if (receivedStopsJSON.status >= 300) {
+        let nearbyStopResponse = await fetch("https://api.tfl.gov.uk/StopPoint/?lat="+latitude+"&lon="+longitude+"&stopTypes=NaptanPublicBusCoachTram&radius=200");
+        let nearbyStopJSON = await nearbyStopResponse.json();
+        if (nearbyStopJSON.status >= 300) {
             console.log("Post code not found");
             return null;
         } else {
-            return receivedStopsJSON.stopPoints;
+            if (nearbyStopJSON.stopPoints.length < 2)
+                console.log("Only found " + nearbyStopJSON.stopPoints.length + " stops within 200 metres.");
+            return nearbyStopJSON.stopPoints;
         }
     } catch (e) {
         console.error(e);
@@ -62,10 +64,10 @@ function outputPredictedArrivalsFromJSON(predictedArrivalsJSON) {
 let requestedBusStopPostCode = prompt("Input a postcode: ");
 if (requestedBusStopPostCode.length === 0)
     requestedBusStopPostCode = "NW51TL";
-fetchPostCodeLocation(requestedBusStopPostCode).then(
+fetchPostcodeLongitudeLatitude(requestedBusStopPostCode).then(
     postcodeLongitudeLatitude => fetchBusStopsByLongitudeLatitude(...postcodeLongitudeLatitude).then(
         nearbyStops => {
-            for (let stopIndex = 0; stopIndex < 2; stopIndex++) {
+            for (let stopIndex = 0; stopIndex < Math.min(2, nearbyStops.length); stopIndex++) {
                 outputBusStopArrivals(nearbyStops[stopIndex].id);
             }
         }
