@@ -1,11 +1,11 @@
 const prompt = require("prompt-sync")();
 const fetch = require("node-fetch");
 
-const fetchBusArrivals = async (busStopID) => {
+const outputBusStopArrivals = async (busStopID) => {
     try {
         const busArrivalsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/"+busStopID+"/Arrivals");
         const busArrivalsJSON = await busArrivalsResponse.json();
-        if (busArrivalsResponse.status === 404) {
+        if (busArrivalsResponse.status >= 300) {
             console.log("Bus stop with ID " + busStopID + " does not exist.");
         } else {
             outputPredictedArrivalsFromJSON(busArrivalsJSON);
@@ -59,19 +59,15 @@ function outputPredictedArrivalsFromJSON(predictedArrivalsJSON) {
     }
 }
 
-//let requestedBusStopID = prompt("Input a bus stop ID to check the predicted arrivals for: ");
-//if (requestedBusStopID.length === 0)
-//    requestedBusStopID = "490008660N";
-
 let requestedBusStopPostCode = prompt("Input a postcode: ");
-
+if (requestedBusStopPostCode.length === 0)
+    requestedBusStopPostCode = "NW51TL";
 fetchPostCodeLocation(requestedBusStopPostCode).then(
     postcodeLongitudeLatitude => fetchBusStopsByLongitudeLatitude(...postcodeLongitudeLatitude).then(
         nearbyStops => {
             for (let stopIndex = 0; stopIndex < 2; stopIndex++) {
-                fetchBusArrivals(nearbyStops[stopIndex].id);
+                outputBusStopArrivals(nearbyStops[stopIndex].id);
             }
         }
     )
 );
-//fetchBusArrivals(requestedBusStopID);
