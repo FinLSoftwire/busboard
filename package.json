@@ -12,6 +12,7 @@
   },
   "private": true,
   "dependencies": {
-    "follow-redirects": "^1.15.9"
+    "follow-redirects": "^1.15.9",
+    "prompt-sync": "^4.2.0"
   }
 }
