@@ -15,6 +15,36 @@ const fetchBusArrivals = async (busStopID) => {
     }
 }
 
+const fetchPostCodeLocation = async(postCode) => {
+    try {
+        const postCodeResponse = await fetch("https://api.postcodes.io/postcodes/"+postCode);
+        const receivedPostCodeJSON = await postCodeResponse.json();
+        if (receivedPostCodeJSON.status >= 300) {
+            console.log("Post code not found");
+            return null;
+        } else {
+            return [receivedPostCodeJSON.result.longitude, receivedPostCodeJSON.result.latitude];
+        }
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+const fetchBusStopsByLongitudeLatitude = async(longitude, latitude) => {
+    try {
+        const nearbyStopResponse = await fetch("https://api.tfl.gov.uk/StopPoint/?lat="+latitude+"&lon="+longitude+"&stopTypes=NaptanPublicBusCoachTram");
+        const receivedStopsJSON = await nearbyStopResponse.json();
+        if (receivedStopsJSON.status >= 300) {
+            console.log("Post code not found");
+            return null;
+        } else {
+            return receivedStopsJSON.stopPoints;
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 function outputPredictedArrivalsFromJSON(predictedArrivalsJSON) {
     let chronologicalPredictedArrivalObjects = predictedArrivalsJSON.sort( (a,b) => {return a.timeToStation-b.timeToStation; });
     for(let arrivalObjectIndex in chronologicalPredictedArrivalObjects) {
@@ -29,8 +59,19 @@ function outputPredictedArrivalsFromJSON(predictedArrivalsJSON) {
     }
 }
 
-let requestedBusStopID = prompt("Input a bus stop ID to check the predicted arrivals for: ");
-if (requestedBusStopID.length === 0)
-    requestedBusStopID = "490008660N";
+//let requestedBusStopID = prompt("Input a bus stop ID to check the predicted arrivals for: ");
+//if (requestedBusStopID.length === 0)
+//    requestedBusStopID = "490008660N";
 
-fetchBusArrivals(requestedBusStopID);
+let requestedBusStopPostCode = prompt("Input a postcode: ");
+
+fetchPostCodeLocation(requestedBusStopPostCode).then(
+    postcodeLongitudeLatitude => fetchBusStopsByLongitudeLatitude(...postcodeLongitudeLatitude).then(
+        nearbyStops => {
+            for (let stopIndex = 0; stopIndex < 2; stopIndex++) {
+                fetchBusArrivals(nearbyStops[stopIndex].id);
+            }
+        }
+    )
+);
+//fetchBusArrivals(requestedBusStopID);
